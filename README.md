@@ -33,7 +33,7 @@ well_scraper_project/
 │   ├── database.py
 │   └── app.py
 ├── data/
-│   ├── apis.csv         # Input CSV of API numbers
+│   ├── apis_pythondev_test.csv         # Input CSV of API numbers
 │   └── sqlite.db        # SQLite database
 ├── main.py
 ├── requirements.txt
@@ -79,17 +79,17 @@ pip install -r requirements.txt
 ### Basic scraping
 
 ```bash
-python main.py --csv data/apis.csv
+python main.py --csv data/apis_pythondev_test.csv
 ```
 
-This scrapes all API numbers in `data/apis.csv` and stores them in `sqlite.db`.
+This scrapes all API numbers in `data/apis_pythondev_test.csv` and stores them in `sqlite.db`.
 
 ---
 
 ### Multithreaded scraping
 
 ```bash
-python main.py --csv data/apis.csv --multithread --threads 10
+python main.py --csv data/apis_pythondev_test.csv --multithread --threads 10
 ```
 
 - `--multithread` enables threading
@@ -102,8 +102,8 @@ python main.py --csv data/apis.csv --multithread --threads 10
 You can optionally export the SQLite database to CSV or JSON after scraping:
 
 ```bash
-python main.py --csv data/apis.csv --export_path data/wells_export.csv --export_format csv
-python main.py --csv data/apis.csv --export_path data/wells_export.json --export_format json
+python main.py --csv data/apis_pythondev_test.csv --export_path data/wells_export.csv --export_format csv
+python main.py --csv data/apis_pythondev_test.csv --export_path data/wells_export.json --export_format json
 ```
 
 - `--export_path`: File path to save exported data
