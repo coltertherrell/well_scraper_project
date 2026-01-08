@@ -105,7 +105,13 @@ class WellScraper:
         soup = BeautifulSoup(resp.text, "html.parser")
         data = {"API": api_number}
 
+        parsed_lat_lon_crs = False  # flag to parse coordinates only once
+
         for field, span_id in WellFields.FIELD_IDS.items():
+
+            if field == "API":
+                continue
+
             raw_value = self._get_field_text(soup, span_id)
 
             if field in {"Latitude", "Longitude", "CRS"}:
@@ -113,7 +119,8 @@ class WellScraper:
                 data["Latitude"] = lat
                 data["Longitude"] = lon
                 data["CRS"] = crs
-            else:
+                parsed_lat_lon_crs = True  # ensure we don’t parse again
+            elif field not in {"Latitude", "Longitude", "CRS"}:
                 data[field] = raw_value
 
         return data
