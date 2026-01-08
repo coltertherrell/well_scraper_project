@@ -167,7 +167,7 @@ pytest tests/
 
 ## Notes
 
-- Handles HTTP 429 rate limiting with exponential backoff
+- Handles content based (as opposed to HTTP 429 respone codes) rate limiting with exponential backoff
 - Multithreading improves speed for large CSVs
 - Latitude, Longitude, CRS are parsed from the same field
 - SQLite DB can be exported anytime using `export_data()` method in `database.py`
