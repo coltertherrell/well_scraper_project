@@ -34,9 +34,6 @@ class ScraperApp:
         self.skipped = 0
         self.lock = threading.Lock()
 
-        self.export_path = None
-        self.export_format = None
-
     def _process_api(self, api):
         """
         Process a single API: scrape data and insert into database.
@@ -94,6 +91,3 @@ class ScraperApp:
         print(f"Skipped (missing API): {self.skipped}")
         print(f"Successfully inserted: {self.inserted}")
         print(f"Errors/Issues: {self.errors}")
-
-        if self.export_path and self.export_format:
-            self.db.export_data(self.export_path, self.export_format)
