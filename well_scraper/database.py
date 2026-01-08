@@ -15,8 +15,8 @@ class WellDatabase:
             db_path (str): Path to the SQLite database file.
         """
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._create_table()
         self.logger = logging.getLogger(self.__class__.__name__)
+        self._create_table()
 
     def _create_table(self):
         """
@@ -61,10 +61,7 @@ class WellDatabase:
         """
         columns = ",".join(record.keys())
         placeholders = ",".join("?" * len(record))
-        self.conn.execute(
-            f"INSERT OR REPLACE INTO api_well_data ({columns}) VALUES ({placeholders})",
-            tuple(record.values()),
-        )
+        self.conn.execute(f"INSERT OR REPLACE INTO api_well_data ({columns}) VALUES ({placeholders})",tuple(record.values()))
         self.conn.commit()
         self.logger.debug(f"Inserted/Updated record for API {record.get('API')}")
 

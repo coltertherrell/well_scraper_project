@@ -34,7 +34,8 @@ well_scraper_project/
 │   └── app.py
 ├── data/
 │   ├── apis_pythondev_test.csv         # Input CSV of API numbers
-│   └── sqlite.db                        # SQLite database
+│   ├── sqlite.db                       # SQLite database
+|   └── wells_export.csv                # Optional csv export of sqlite.db to easily view data    
 ├── main.py
 ├── requirements.txt
 ├── README.md

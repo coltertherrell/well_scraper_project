@@ -79,21 +79,25 @@ class WellScraper:
 
         for attempt in range(self.max_retries + 1):
             try:
+
                 resp = requests.get(url, timeout=30)
 
-                if resp.status_code == 429:
+                if "Site Busy - Rate Limit Reached" in resp.text:
                     wait = self.backoff_factor * (2 ** attempt)
-                    self.logger.warning(f"429 for {api_number}, backing off {wait}s")
+                    self.logger.warning(f"429 Too Many Requests for {api_number}, sleeping {wait}s")
                     time.sleep(wait)
-                    continue
+                    continue  # retry
 
                 resp.raise_for_status()
-                break
+
+                break  # success
 
             except requests.RequestException as e:
+
                 if attempt >= self.max_retries:
                     self.logger.error(f"Failed {api_number}: {e}")
                     return None
+
                 wait = self.backoff_factor * (2 ** attempt)
                 self.logger.warning(f"Retry {attempt+1} for {api_number}, sleeping {wait}s")
                 time.sleep(wait)
