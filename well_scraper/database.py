@@ -1,11 +1,24 @@
 import sqlite3
+import csv
+import json
+import logging
 
 class WellDatabase:
     def __init__(self, db_path):
+        """
+        Initialize the WellDatabase with a SQLite database path.
+
+        Args:
+            db_path (str): Path to the SQLite database file.
+        """
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self._create_table()
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def _create_table(self):
+        """
+        Create the 'api_well_data' table if it does not exist.
+        """
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS api_well_data (
@@ -34,8 +47,15 @@ class WellDatabase:
             """
         )
         self.conn.commit()
+        self.logger.info("Database table 'api_well_data' ensured.")
 
     def insert(self, record: dict):
+        """
+        Insert or replace a well data record into the database.
+
+        Args:
+            record (dict): Dictionary containing well data with keys matching table columns.
+        """
         columns = ",".join(record.keys())
         placeholders = ",".join("?" * len(record))
         self.conn.execute(
@@ -43,3 +63,41 @@ class WellDatabase:
             tuple(record.values()),
         )
         self.conn.commit()
+        self.logger.debug(f"Inserted/Updated record for API {record.get('API')}")
+
+    def export_data(self, output_path, format="csv"):
+        """
+        Export all well data to CSV or JSON format.
+
+        Args:
+            output_path (str): Path to the output file.
+            format (str): Export format, either "csv" or "json". Defaults to "csv".
+
+        Raises:
+            ValueError: If format is not "csv" or "json".
+        """
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM api_well_data")
+        rows = cursor.fetchall()
+        columns = [description[0] for description in cursor.description]
+
+        if format.lower() == "csv":
+            with open(output_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(columns)
+                writer.writerows(rows)
+            self.logger.info(f"Exported {len(rows)} rows to CSV: {output_path}")
+
+        elif format.lower() == "json":
+            self.conn.row_factory = sqlite3.Row
+            cursor = self.conn.cursor()
+            cursor.execute("SELECT * FROM api_well_data")
+            rows = cursor.fetchall()
+            data = [dict(row) for row in rows]
+            with open(output_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+            self.logger.info(f"Exported {len(data)} rows to JSON: {output_path}")
+
+        else:
+            self.logger.error(f"Invalid format '{format}' for export_data()")
+            raise ValueError("format must be 'csv' or 'json'")

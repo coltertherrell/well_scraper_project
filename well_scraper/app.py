@@ -7,6 +7,15 @@ from .database import WellDatabase
 
 class ScraperApp:
     def __init__(self, csv_path, db_path, multithread=False, threads=5):
+        """
+        Initialize the ScraperApp with paths and options.
+
+        Args:
+            csv_path (str): Path to the CSV file containing API numbers.
+            db_path (str): Path to the SQLite database file.
+            multithread (bool): Whether to use multithreading for scraping. Defaults to False.
+            threads (int): Number of threads to use if multithreaded. Defaults to 5.
+        """
         self.csv_path = csv_path
         self.scraper = WellScraper()
         self.db = WellDatabase(db_path)
@@ -19,6 +28,12 @@ class ScraperApp:
         self.lock = threading.Lock()
 
     def _process_api(self, api):
+        """
+        Process a single API: scrape data and insert into database.
+
+        Args:
+            api (str): The API number to process.
+        """
         try:
             data = self.scraper.scrape_api(api)
             if data:
@@ -36,6 +51,9 @@ class ScraperApp:
             self.logger.error(f"Error processing {api}: {e}")
 
     def run(self):
+        """
+        Run the scraping process: read APIs from CSV, process them, and print summary.
+        """
         apis = []
         with open(self.csv_path, newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)

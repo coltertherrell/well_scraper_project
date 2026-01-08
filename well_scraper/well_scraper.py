@@ -10,11 +10,28 @@ class WellScraper:
     )
 
     def __init__(self, max_retries=5, backoff_factor=1):
+        """
+        Initialize the WellScraper with retry settings.
+
+        Args:
+            max_retries (int): Maximum number of retries for failed requests. Defaults to 5.
+            backoff_factor (int): Base factor for exponential backoff. Defaults to 1.
+        """
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def _get_field_text(self, soup, span_id):
+        """
+        Extract text from a span element by ID, removing nested tags.
+
+        Args:
+            soup (BeautifulSoup): Parsed HTML soup.
+            span_id (str): ID of the span element.
+
+        Returns:
+            str or None: The extracted text or None if not found.
+        """
         span = soup.find("span", id=span_id)
         if not span:
             return None
@@ -27,6 +44,15 @@ class WellScraper:
 
     @staticmethod
     def parse_lat_lon_crs(text):
+        """
+        Parse latitude, longitude, and CRS from coordinate text.
+
+        Args:
+            text (str): Coordinate text in format "lat,lon crs".
+
+        Returns:
+            tuple: (latitude, longitude, crs) or (None, None, None) if parsing fails.
+        """
         if not text:
             return None, None, None
         try:
@@ -37,6 +63,15 @@ class WellScraper:
             return None, None, None
 
     def scrape_api(self, api_number):
+        """
+        Scrape well data for a given API number from the website.
+
+        Args:
+            api_number (str): The API number to scrape.
+
+        Returns:
+            dict or None: Dictionary of scraped data or None if failed.
+        """
         url = self.BASE_URL.format(api_number)
 
         for attempt in range(self.max_retries + 1):
