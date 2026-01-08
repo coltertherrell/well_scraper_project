@@ -6,10 +6,7 @@ import logging
 from well_scraper.app import ScraperApp
 
 # Set up logging to console and file
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("Main")
 
 def main():

@@ -40,7 +40,6 @@ well_scraper_project/
 ├── requirements.txt
 ├── README.md
 └── tests/
-    ├── __init__.py
     ├── test_well_scraper.py
     ├── test_database.py
     └── test_app.py
@@ -145,24 +144,31 @@ Empty or missing API rows are skipped with a warning.
 - Python 3.8+
 - `requests`
 - `beautifulsoup4`
+- `pytest` (for testing)
 
 Install via:
 
 ```bash
-pip install requests beautifulsoup4
+pip install -r requirements.txt
 ```
 
-Or use `requirements.txt`.
+Or manually:
+
+```bash
+pip install requests beautifulsoup4 pytest
+```
 
 ---
 
 ## Testing
 
-Run tests with:
+Run unit tests with pytest:
 
 ```bash
 pytest tests/
 ```
+
+Tests cover database operations, web scraping logic, and app functionality with mocked dependencies.
 
 ---
 
