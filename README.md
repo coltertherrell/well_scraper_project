@@ -2,7 +2,7 @@
 
 A Python scraper for New Mexico Oil & Gas well data from the [N.M. Energy, Minerals and Natural Resources Department (EMNRD) Well Details](https://wwwapps.emnrd.nm.gov/OCD/OCDPermitting/Data/WellDetails.aspx) website.  
 
-This project reads a CSV of API numbers, scrapes well information for each, stores it in a SQLite database, and optionally exports the data to CSV or JSON. It supports multithreading, logging, and automatic retries for HTTP errors.
+This project reads a CSV of API numbers, scrapes well information for each, stores it in a SQLite database, and optionally exports the data to CSV or JSON. It supports multithreading, logging, and automatic retries when being rate limited.
 
 ---
 
@@ -24,7 +24,7 @@ This project reads a CSV of API numbers, scrapes well information for each, stor
 
 ## Project Structure
 
-```
+```text
 well_scraper_project/
 ├── well_scraper/
 │   ├── __init__.py
@@ -34,7 +34,7 @@ well_scraper_project/
 │   └── app.py
 ├── data/
 │   ├── apis_pythondev_test.csv         # Input CSV of API numbers
-│   └── sqlite.db        # SQLite database
+│   └── sqlite.db                        # SQLite database
 ├── main.py
 ├── requirements.txt
 ├── README.md
