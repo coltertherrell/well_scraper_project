@@ -108,7 +108,7 @@ class WellScraper:
         for field, span_id in WellFields.FIELD_IDS.items():
             raw_value = self._get_field_text(soup, span_id)
 
-            if field == "Coordinates":
+            if field in {"Latitude", "Longitude", "CRS"}:
                 lat, lon, crs = self.parse_lat_lon_crs(raw_value)
                 data["Latitude"] = lat
                 data["Longitude"] = lon
