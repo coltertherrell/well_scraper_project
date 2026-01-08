@@ -1,3 +1,6 @@
+# =============================
+# well_scraper/well_scraper.py
+# =============================
 import time
 import logging
 import requests

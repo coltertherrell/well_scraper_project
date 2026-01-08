@@ -1,61 +1,173 @@
-# New Mexico OCD Well Scraper
+# Well Scraper Project
 
-This project scrapes well data from the New Mexico Oil Conservation Division (OCD) public website and stores the results in a local SQLite database. It is designed to be reliable, modular, and production-ready, with support for retry/backoff, logging, streaming input, and optional multithreading.
+A Python scraper for New Mexico Oil & Gas well data from the [N.M. Energy, Minerals and Natural Resources Department (EMNRD) Well Details](https://wwwapps.emnrd.nm.gov/OCD/OCDPermitting/Data/WellDetails.aspx) website.  
+
+This project reads a CSV of API numbers, scrapes well information for each, stores it in a SQLite database, and optionally exports the data to CSV or JSON. It supports multithreading, logging, and automatic retries for HTTP errors.
 
 ---
 
 ## Features
 
-- Scrapes well details by API number from NM OCD
-- Streams API numbers from a CSV file (memory-efficient)
-- Handles:
-  - HTTP 429 rate limiting with exponential backoff
-  - Network timeouts and request failures
-  - Missing or malformed HTML fields
-- Parses and stores:
-  - Operator, status, well/work type
-  - Elevations and true vertical depth (TVD)
-  - Spud date and last inspection date
-  - Latitude, longitude, and CRS
-- Stores results in SQLite
-- Optional multithreaded scraping
-- Structured, object-oriented design
+- Scrape detailed well information including:
+  - Operator, Status, Well Type, Work Type, Directional Status
+  - Multi-Lateral, Mineral Owner, Surface Owner
+  - Surface Location, Elevations (GL, KB, DF)
+  - Completions, Potash Waiver, Spud Date, Last Inspection, TVD
+  - Latitude, Longitude, CRS
+- Store scraped data in a SQLite database (`sqlite.db` by default)
+- Optional export to CSV or JSON
+- Multithreaded scraping for faster processing
+- Handles HTTP errors and retries with exponential backoff
+- Logging to console with timestamps and log levels
 
 ---
 
 ## Project Structure
 
+```
 well_scraper_project/
 ├── well_scraper/
-│ ├── init.py
-│ ├── constants.py # Centralized field IDs (WellFields)
-│ ├── well_scraper.py # Scraping logic + retry/backoff
-│ ├── database.py # SQLite database layer
-│ └── app.py # Orchestration (ScraperApp)
+│   ├── __init__.py
+│   ├── constants.py
+│   ├── well_scraper.py
+│   ├── database.py
+│   └── app.py
 ├── data/
-│ ├── apis.csv # Input API numbers
-│ └── sqlite.db # Output SQLite database
+│   ├── apis.csv         # Input CSV of API numbers
+│   └── sqlite.db        # SQLite database
+├── main.py
+├── requirements.txt
+├── README.md
+└── tests/
+    ├── __init__.py
+    ├── test_well_scraper.py
+    ├── test_database.py
+    └── test_app.py
+```
+
+---
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/coltertherrell/well_scraper_project.git
+cd well_scraper_project
+```
+
+2. Create a virtual environment and activate it:
+
+```bash
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS/Linux
+source venv/bin/activate
+```
+
+3. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Usage
+
+### Basic scraping
+
+```bash
+python main.py --csv data/apis.csv
+```
+
+This scrapes all API numbers in `data/apis.csv` and stores them in `sqlite.db`.
+
+---
+
+### Multithreaded scraping
+
+```bash
+python main.py --csv data/apis.csv --multithread --threads 10
+```
+
+- `--multithread` enables threading
+- `--threads` sets the number of concurrent threads (default is 5)
+
+---
+
+### Exporting the database
+
+You can optionally export the SQLite database to CSV or JSON after scraping:
+
+```bash
+python main.py --csv data/apis.csv --export_path data/wells_export.csv --export_format csv
+python main.py --csv data/apis.csv --export_path data/wells_export.json --export_format json
+```
+
+- `--export_path`: File path to save exported data
+- `--export_format`: Either `csv` or `json`
+
+If no export options are provided, the scraper only writes to the database.
+
+---
+
+## Logging
+
+Logs include timestamps, log levels, and messages about progress, skipped rows, and HTTP errors.
+
+```text
+2026-01-07 18:17:02,507 [INFO] ScraperApp: Inserted 30-015-25325
+2026-01-07 18:17:03,123 [WARNING] ScraperApp: Skipping row 481: missing API
+```
+
+---
+
+## CSV Input Format
+
+Input CSV should have a header `api` or `API`:
+
+```csv
+api
+30-015-25325
+30-015-25327
+30-015-25330
+```
+
+Empty or missing API rows are skipped with a warning.
+
+---
 
 ## Requirements
 
-- Python 3.9+
-- Internet access
+- Python 3.8+
+- `requests`
+- `beautifulsoup4`
 
-## Install
+Install via:
 
-```powershell
-python -m pip install -r requirements.txt
+```bash
+pip install requests beautifulsoup4
 ```
 
-## Run
+Or use `requirements.txt`.
 
-Run the scraper with a CSV of API numbers (example CSV included in `data/`):
+---
 
-```powershell
-python main.py --csv data/apis_pythondev_test.csv
+## Testing
+
+Run tests with:
+
+```bash
+pytest tests/
 ```
 
-Options:
-- `--db`: path to SQLite DB (default: `data/sqlite.db`)
-- `--multithread`: enable multithreaded scraping
-- `--threads N`: number of worker threads (default: 5)
+---
+
+## Notes
+
+- Handles HTTP 429 rate limiting with exponential backoff
+- Multithreading improves speed for large CSVs
+- Latitude, Longitude, CRS are parsed from the same field
+- SQLite DB can be exported anytime using `export_data()` method in `database.py`

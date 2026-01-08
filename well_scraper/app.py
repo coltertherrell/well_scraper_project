@@ -1,3 +1,6 @@
+# ======================
+# well_scraper/app.py
+# ======================
 import csv
 import logging
 import concurrent.futures
@@ -76,8 +79,13 @@ class ScraperApp:
         else:
             for api in apis:
                 self._process_api(api)
+                time.sleep(0.5)
 
         print(f"Total APIs in CSV: {total_apis}")
         print(f"Skipped (missing API): {self.skipped}")
         print(f"Successfully inserted: {self.inserted}")
         print(f"Errors/Issues: {self.errors}")
+
+        # Export if requested
+        if self.export_path and self.export_format:
+            self.db.export_data(self.export_path, self.export_format)

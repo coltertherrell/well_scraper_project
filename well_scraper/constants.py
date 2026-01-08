@@ -1,3 +1,6 @@
+# ==========================
+# well_scraper/constants.py
+# ==========================
 class WellFields:
     FIELD_IDS = {
         # General Well Information
