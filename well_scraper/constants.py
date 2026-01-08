@@ -22,12 +22,10 @@ class WellFields:
         # Depths
         "TVD": "ctl00_ctl00__main_main_ucGeneralWellInformation_lblTrueVerticalDepth",
 
-        # APD / Dates
+        # Dates
         "Spud_Date": "ctl00_ctl00__main_main_ucGeneralWellInformation_lblSpudDate",
         "Last_Inspection": "ctl00_ctl00__main_main_ucGeneralWellInformation_lblLastInspectionDate",
 
         # Location / Coordinates
-        "Latitude": "ctl00_ctl00__main_main_ucGeneralWellInformation_Location_lblCoordinates",
-        "Longitude": "ctl00_ctl00__main_main_ucGeneralWellInformation_Location_lblCoordinates",
-        "CRS": "ctl00_ctl00__main_main_ucGeneralWellInformation_Location_lblCoordinates",
+        "Coordinates": "ctl00_ctl00__main_main_ucGeneralWellInformation_Location_lblCoordinates",
     }

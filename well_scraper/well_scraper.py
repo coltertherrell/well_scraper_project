@@ -7,18 +7,21 @@ import requests
 from bs4 import BeautifulSoup
 from .constants import WellFields
 
+
 class WellScraper:
     BASE_URL = (
         "https://wwwapps.emnrd.nm.gov/OCD/OCDPermitting/Data/WellDetails.aspx?api={}"
     )
+
+    RATE_LIMIT_TEXT = "Site Busy - Rate Limit Reached"
 
     def __init__(self, max_retries=5, backoff_factor=1):
         """
         Initialize the WellScraper with retry settings.
 
         Args:
-            max_retries (int): Maximum number of retries for failed requests. Defaults to 5.
-            backoff_factor (int): Base factor for exponential backoff. Defaults to 1.
+            max_retries (int): Maximum number of retries for failed requests.
+            backoff_factor (int): Base factor for exponential backoff.
         """
         self.max_retries = max_retries
         self.backoff_factor = backoff_factor
@@ -27,19 +30,14 @@ class WellScraper:
     def _get_field_text(self, soup, span_id):
         """
         Extract text from a span element by ID, removing nested tags.
-
-        Args:
-            soup (BeautifulSoup): Parsed HTML soup.
-            span_id (str): ID of the span element.
-
-        Returns:
-            str or None: The extracted text or None if not found.
         """
+        if not span_id:
+            return None
+
         span = soup.find("span", id=span_id)
         if not span:
             return None
 
-        # remove nested tags (e.g., <a>)
         for tag in span.find_all():
             tag.extract()
 
@@ -49,12 +47,6 @@ class WellScraper:
     def parse_lat_lon_crs(text):
         """
         Parse latitude, longitude, and CRS from coordinate text.
-
-        Args:
-            text (str): Coordinate text in format "lat,lon crs".
-
-        Returns:
-            tuple: (latitude, longitude, crs) or (None, None, None) if parsing fails.
         """
         if not text:
             return None, None, None
@@ -67,60 +59,52 @@ class WellScraper:
 
     def scrape_api(self, api_number):
         """
-        Scrape well data for a given API number from the website.
-
-        Args:
-            api_number (str): The API number to scrape.
-
-        Returns:
-            dict or None: Dictionary of scraped data or None if failed.
+        Scrape well data for a given API number.
         """
         url = self.BASE_URL.format(api_number)
 
-        for attempt in range(self.max_retries + 1):
+        for attempt in range(1, self.max_retries + 1):
             try:
-
                 resp = requests.get(url, timeout=30)
 
-                if "Site Busy - Rate Limit Reached" in resp.text:
-                    wait = self.backoff_factor * (2 ** attempt)
-                    self.logger.warning(f"429 Too Many Requests for {api_number}, sleeping {wait}s")
+                if self.RATE_LIMIT_TEXT in resp.text:
+                    wait = self.backoff_factor * (2 ** (attempt - 1))
+                    self.logger.warning(f"Rate limit page detected for {api_number}, retry {attempt}/{self.max_retries}, sleeping {wait}s")
                     time.sleep(wait)
-                    continue  # retry
+                    continue
 
                 resp.raise_for_status()
 
-                break  # success
+                if attempt > 1:
+                    self.logger.info(f"Retry succeeded for {api_number} on attempt {attempt}")
+
+                break
 
             except requests.RequestException as e:
-
                 if attempt >= self.max_retries:
-                    self.logger.error(f"Failed {api_number}: {e}")
+                    self.logger.error(f"Failed {api_number} after {attempt} attempts: {e}")
                     return None
 
-                wait = self.backoff_factor * (2 ** attempt)
-                self.logger.warning(f"Retry {attempt+1} for {api_number}, sleeping {wait}s")
+                wait = self.backoff_factor * (2 ** (attempt - 1))
+                self.logger.warning(f"HTTP error for {api_number} (attempt {attempt}), sleeping {wait}s: {e}")
                 time.sleep(wait)
 
         soup = BeautifulSoup(resp.text, "html.parser")
         data = {"API": api_number}
 
-        parsed_lat_lon_crs = False  # flag to parse coordinates only once
+        # Parse coordinates ONCE
+        coord_span_id = WellFields.FIELD_IDS.get("Coordinates")
+        coord_text = self._get_field_text(soup, coord_span_id)
+        lat, lon, crs = self.parse_lat_lon_crs(coord_text)
+
+        data["Latitude"] = lat
+        data["Longitude"] = lon
+        data["CRS"] = crs
 
         for field, span_id in WellFields.FIELD_IDS.items():
-
-            if field == "API":
+            if field in {"API", "Coordinates"}:
                 continue
 
-            raw_value = self._get_field_text(soup, span_id)
-
-            if field in {"Latitude", "Longitude", "CRS"}:
-                lat, lon, crs = self.parse_lat_lon_crs(raw_value)
-                data["Latitude"] = lat
-                data["Longitude"] = lon
-                data["CRS"] = crs
-                parsed_lat_lon_crs = True  # ensure we don’t parse again
-            elif field not in {"Latitude", "Longitude", "CRS"}:
-                data[field] = raw_value
+            data[field] = self._get_field_text(soup, span_id)
 
         return data
