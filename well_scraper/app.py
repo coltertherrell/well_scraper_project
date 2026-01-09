@@ -62,9 +62,7 @@ class ScraperApp:
             # Usually indicates mismatch between scraped keys and WellRecord fields
             with self.lock:
                 self.errors += 1
-            self.logger.exception(
-                f"Data schema error for API {api} (likely mismatched fields): {e}"
-            )
+            self.logger.exception(f"Data schema error for API {api} (likely mismatched fields): {e}")
 
         except Exception as e:
             with self.lock:
@@ -99,7 +97,7 @@ class ScraperApp:
         else:
             for api in apis:
                 self._process_api(api)
-                time.sleep(1)
+                time.sleep(1) # This is about as fast as I can go without hammering the server
 
         print(f"Total APIs in CSV: {total_apis}")
         print(f"Skipped (missing API): {self.skipped}")
