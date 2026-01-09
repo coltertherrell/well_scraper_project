@@ -60,6 +60,7 @@ def get_apis_in_polygon(coords: str, db: WellDatabase = Depends(get_db)):
     Args:
         coords (str): Comma-separated list of lat/lon pairs.
     """
+    logger.info(f"Fetching APIs within polygon defined by coords: {coords}")
     try:
         flat = [float(c) for c in coords.split(",")]
         if len(flat) % 2 != 0:
@@ -78,6 +79,7 @@ def get_apis_in_polygon(coords: str, db: WellDatabase = Depends(get_db)):
         if polygon.contains(Point(lat, lon)):
             result.append(api)
 
+    logger.info(f"Found {len(result)} APIs within polygon\n apis: {result}")
     return {"apis": result}
 
 @app.get("/health")
