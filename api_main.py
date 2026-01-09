@@ -3,15 +3,13 @@
 # =========================
 from fastapi import FastAPI, Depends, HTTPException
 from typing import Optional
-import logging
+from shapely.geometry import Point, Polygon
 from well_scraper.database import WellDatabase
 from well_scraper.models import WellRecord
+import logging
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("API")
 
 # FastAPI app
@@ -53,3 +51,38 @@ def get_well(api_number: str, db: WellDatabase = Depends(get_db)):
     record_dict = dict(zip(columns, row))
     logger.info(f"Well data retrieved for API: {api_number}\n Well data: {record_dict}\n")
     return WellRecord(**record_dict)
+
+@app.get("/polygon")
+def get_apis_in_polygon(coords: str, db: WellDatabase = Depends(get_db)):
+    """
+    GET endpoint for retrieving APIs inside a polygon.
+    
+    Args:
+        coords (str): Comma-separated list of lat/lon pairs.
+    """
+    try:
+        flat = [float(c) for c in coords.split(",")]
+        if len(flat) % 2 != 0:
+            raise ValueError("Must provide an even number of values for lat/lon pairs")
+        points = [(flat[i], flat[i+1]) for i in range(0, len(flat), 2)]
+        polygon = Polygon(points)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid coordinates: {e}")
+
+    cursor = db.conn.cursor()
+    cursor.execute("SELECT API, Latitude, Longitude FROM api_well_data")
+    result = []
+    for api, lat, lon in cursor.fetchall():
+        if lat is None or lon is None:
+            continue
+        if polygon.contains(Point(lat, lon)):
+            result.append(api)
+
+    return {"apis": result}
+
+@app.get("/health")
+def health_check():
+    """
+    Health check endpoint.
+    """
+    return {"status": "ok"}

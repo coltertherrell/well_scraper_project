@@ -19,7 +19,9 @@ This project reads a CSV of API numbers, scrapes well information for each, stor
 - Multithreaded scraping for faster processing
 - Handles HTTP errors and retries with exponential backoff
 - Logging to console with timestamps and log levels
-- **API endpoint** for querying wells by API number (via FastAPI)
+- FastAPI endpoints to query well data:
+  - By API number
+  - By polygon coordinates (latitude/longitude)
 
 ---
 
@@ -198,6 +200,38 @@ GET /well/30-015-25325
 - Uses **dependency-injected database** for safe and testable queries
 
 ---
+
+## GET /polygon
+
+Retrieve all API numbers within a polygon
+
+**Request:**
+
+```http
+GET /polygon?coords=32.81,-104.19,32.66,-104.32,32.54,-104.24
+```
+
+**Response:**
+
+```json
+{
+  "apis":
+    [
+      "30-015-25503",
+      "30-015-25862",
+      "30-015-26059",
+      "30-015-26538",
+      "30-015-27124",
+      "30-015-31319",
+      "30-015-26058",
+      "30-015-26237",
+      "30-015-26404"
+    ]
+}
+```
+
+- Returns 400 Bad Request if fewer than 3 coordinates are provided (not a valid polygon).
+- Returns "Invalid coordinates" if number of values for lat/lon pairs is not even
 
 ## Testing
 
