@@ -61,14 +61,29 @@ def get_apis_in_polygon(coords: str, db: WellDatabase = Depends(get_db)):
         coords (str): Comma-separated list of lat/lon pairs.
     """
     logger.info(f"Fetching APIs within polygon defined by coords: {coords}")
+
     try:
         flat = [float(c) for c in coords.split(",")]
-        if len(flat) % 2 != 0:
-            raise HTTPException(status_code=400, detail="Must provide an even number of values for lat/lon pairs")
-        points = [(flat[i], flat[i+1]) for i in range(0, len(flat), 2)]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Coordinates must be numeric values")
+
+    if len(flat) % 2 != 0:
+        raise HTTPException(status_code=400, detail="Must provide an even number of values for lat/lon pairs")
+
+    points = [(flat[i], flat[i + 1]) for i in range(0, len(flat), 2)]
+
+    if len(points) < 3:
+        raise HTTPException(status_code=400, detail="Polygon must have at least 3 coordinate pairs")
+
+    try:
         polygon = Polygon(points)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid coordinates: {e}")
+        if not polygon.is_valid:
+            raise HTTPException(status_code=400, detail="Invalid polygon geometry")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Unable to construct polygon from provided coordinates")
+
 
     cursor = db.conn.cursor()
     cursor.execute("SELECT API, Latitude, Longitude FROM api_well_data")

@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "well-scraper"
+version = "0.1.0"
+description = "NM Oil & Gas well scraper and API"
+requires-python = ">=3.8"
+
+[tool.setuptools.packages.find]
+where = ["."]

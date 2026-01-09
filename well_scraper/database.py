@@ -7,6 +7,7 @@ import json
 import logging
 from dataclasses import asdict
 from .models import WellRecord
+from typing import Optional
 
 
 class WellDatabase:
@@ -133,7 +134,7 @@ class WellDatabase:
         else:
             raise ValueError("format must be 'csv' or 'json'")
 
-    def get_by_api(self, api: str) -> WellRecord | None:
+    def get_by_api(self, api: str) -> Optional[WellRecord]:
         """
         Retrieve a single well record by API number.
         """

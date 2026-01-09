@@ -82,14 +82,14 @@ def test_polygon_too_few_coords(client):
     coords_str = "35.1,-106.5,35.2,-106.5"  # Only 2 points
     response = client.get(f"/polygon?coords={coords_str}")
     assert response.status_code == 400
-    assert "Invalid coordinates" in response.json()["detail"]
+    assert "Polygon must have at least 3 coordinate pairs" in response.json()["detail"]
 
 
 def test_polygon_invalid_coord_format(client):
     coords_str = "35.1,-106.5,invalid,35.2,-106.4"
     response = client.get(f"/polygon?coords={coords_str}")
     assert response.status_code == 400
-    assert "Invalid coordinates" in response.json()["detail"]
+    assert "Coordinates must be numeric values" in response.json()["detail"]
 
 
 def test_polygon_no_results(client, mock_db):
