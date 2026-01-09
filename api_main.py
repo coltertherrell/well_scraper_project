@@ -63,7 +63,7 @@ def get_apis_in_polygon(coords: str, db: WellDatabase = Depends(get_db)):
     try:
         flat = [float(c) for c in coords.split(",")]
         if len(flat) % 2 != 0:
-            raise ValueError("Must provide an even number of values for lat/lon pairs")
+            raise HTTPException(status_code=400, detail="Must provide an even number of values for lat/lon pairs")
         points = [(flat[i], flat[i+1]) for i in range(0, len(flat), 2)]
         polygon = Polygon(points)
     except Exception as e:

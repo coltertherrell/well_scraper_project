@@ -231,7 +231,7 @@ GET /polygon?coords=32.81,-104.19,32.66,-104.32,32.54,-104.24
 ```
 
 - Returns 400 Bad Request if fewer than 3 coordinates are provided (not a valid polygon).
-- Returns "Invalid coordinates" if number of values for lat/lon pairs is not even
+- Returns 400 Bad Request if number of values for lat/lon pairs is not even
 
 ## Testing
 

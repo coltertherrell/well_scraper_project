@@ -61,3 +61,42 @@ def test_get_well_not_found(client, mock_db):
     response = client.get("/well/invalid-api")
     assert response.status_code == 404
     assert "not found" in response.json()["detail"]
+
+def test_polygon_success(client, mock_db):
+    # Setup: database returns API + lat/lon tuples
+    mock_db.conn.cursor.return_value.fetchall.return_value = [
+        ("30-015-25325", 35.15, -106.45),
+        ("30-015-25327", 35.16, -106.46),
+    ]
+
+    # Single 'coords' string for the URL (lat1,lon1,lat2,lon2,...)
+    coords_str = "35.1,-106.5,35.2,-106.5,35.2,-106.4,35.1,-106.4"
+
+    response = client.get(f"/polygon?coords={coords_str}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["apis"] == ["30-015-25325", "30-015-25327"]
+
+
+def test_polygon_too_few_coords(client):
+    coords_str = "35.1,-106.5,35.2,-106.5"  # Only 2 points
+    response = client.get(f"/polygon?coords={coords_str}")
+    assert response.status_code == 400
+    assert "Invalid coordinates" in response.json()["detail"]
+
+
+def test_polygon_invalid_coord_format(client):
+    coords_str = "35.1,-106.5,invalid,35.2,-106.4"
+    response = client.get(f"/polygon?coords={coords_str}")
+    assert response.status_code == 400
+    assert "Invalid coordinates" in response.json()["detail"]
+
+
+def test_polygon_no_results(client, mock_db):
+    # Database returns no APIs in polygon
+    mock_db.conn.cursor.return_value.fetchall.return_value = []
+
+    coords_str = "35.1,-106.5,35.2,-106.5,35.2,-106.4,35.1,-106.4"
+    response = client.get(f"/polygon?coords={coords_str}")
+    assert response.status_code == 200
+    assert response.json() == {"apis": []}
