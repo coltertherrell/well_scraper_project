@@ -5,9 +5,42 @@ import sqlite3
 import csv
 import json
 import logging
+from dataclasses import asdict
 from .models import WellRecord
 
+
 class WellDatabase:
+    """
+    SQLite database wrapper for storing and exporting well data.
+    """
+
+    TABLE_NAME = "api_well_data"
+
+    # Single source of truth for DB column order
+    COLUMNS = [
+        "API",
+        "Operator",
+        "Status",
+        "Well_Type",
+        "Work_Type",
+        "Directional_Status",
+        "Multi_Lateral",
+        "Mineral_Owner",
+        "Surface_Owner",
+        "Surface_Location",
+        "GL_Elevation",
+        "KB_Elevation",
+        "DF_Elevation",
+        "Single_Multiple_Completion",
+        "Potash_Waiver",
+        "Spud_Date",
+        "Last_Inspection",
+        "TVD",
+        "Latitude",
+        "Longitude",
+        "CRS",
+    ]
+
     def __init__(self, db_path: str):
         """
         Initialize the WellDatabase with a SQLite database path.
@@ -18,11 +51,11 @@ class WellDatabase:
 
     def _create_table(self):
         """
-        Create the 'api_well_data' table if it does not exist.
+        Create the api_well_data table if it does not exist.
         """
         self.conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS api_well_data (
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (
                 API TEXT PRIMARY KEY,
                 Operator TEXT,
                 Status TEXT,
@@ -52,15 +85,23 @@ class WellDatabase:
 
     def insert(self, record: WellRecord):
         """
-        Insert or replace a WellRecord into the database.
+        Insert or replace a WellRecord into the database safely.
         """
-        columns = [field.name for field in record.__dataclass_fields__.values()]
-        placeholders = ",".join("?" * len(columns))
-        values = [getattr(record, col) for col in columns]
+        record_dict = asdict(record)
 
-        sql = f"INSERT OR REPLACE INTO api_well_data ({','.join(columns)}) VALUES ({placeholders})"
+        # Align data strictly to DB columns
+        values = [record_dict.get(col) for col in self.COLUMNS]
+        placeholders = ",".join("?" for _ in self.COLUMNS)
+
+        sql = f"""
+            INSERT OR REPLACE INTO {self.TABLE_NAME}
+            ({",".join(self.COLUMNS)})
+            VALUES ({placeholders})
+        """
+
         self.conn.execute(sql, values)
         self.conn.commit()
+
         self.logger.debug(f"Inserted/Updated record for API {record.API}")
 
     def export_data(self, output_path, format="csv"):
@@ -68,27 +109,26 @@ class WellDatabase:
         Export all well data to CSV or JSON format.
         """
         cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM api_well_data")
+        cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")
         rows = cursor.fetchall()
-        columns = [description[0] for description in cursor.description]
 
         if format.lower() == "csv":
             with open(output_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.writer(f)
-                writer.writerow(columns)
+                writer.writerow(self.COLUMNS)
                 writer.writerows(rows)
             self.logger.info(f"Exported {len(rows)} rows to CSV: {output_path}")
 
         elif format.lower() == "json":
             self.conn.row_factory = sqlite3.Row
             cursor = self.conn.cursor()
-            cursor.execute("SELECT * FROM api_well_data")
+            cursor.execute(f"SELECT * FROM {self.TABLE_NAME}")
             rows = cursor.fetchall()
             data = [dict(row) for row in rows]
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=4)
+
             self.logger.info(f"Exported {len(data)} rows to JSON: {output_path}")
 
         else:
-            self.logger.error(f"Invalid format '{format}' for export_data()")
             raise ValueError("format must be 'csv' or 'json'")
