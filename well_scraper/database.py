@@ -5,14 +5,12 @@ import sqlite3
 import csv
 import json
 import logging
+from .models import WellRecord
 
 class WellDatabase:
-    def __init__(self, db_path):
+    def __init__(self, db_path: str):
         """
         Initialize the WellDatabase with a SQLite database path.
-
-        Args:
-            db_path (str): Path to the SQLite database file.
         """
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -52,29 +50,22 @@ class WellDatabase:
         self.conn.commit()
         self.logger.info("Database table 'api_well_data' ensured.")
 
-    def insert(self, record: dict):
+    def insert(self, record: WellRecord):
         """
-        Insert or replace a well data record into the database.
+        Insert or replace a WellRecord into the database.
+        """
+        columns = [field.name for field in record.__dataclass_fields__.values()]
+        placeholders = ",".join("?" * len(columns))
+        values = [getattr(record, col) for col in columns]
 
-        Args:
-            record (dict): Dictionary containing well data with keys matching table columns.
-        """
-        columns = ",".join(record.keys())
-        placeholders = ",".join("?" * len(record))
-        self.conn.execute(f"INSERT OR REPLACE INTO api_well_data ({columns}) VALUES ({placeholders})",tuple(record.values()))
+        sql = f"INSERT OR REPLACE INTO api_well_data ({','.join(columns)}) VALUES ({placeholders})"
+        self.conn.execute(sql, values)
         self.conn.commit()
-        self.logger.debug(f"Inserted/Updated record for API {record.get('API')}")
+        self.logger.debug(f"Inserted/Updated record for API {record.API}")
 
     def export_data(self, output_path, format="csv"):
         """
         Export all well data to CSV or JSON format.
-
-        Args:
-            output_path (str): Path to the output file.
-            format (str): Export format, either "csv" or "json". Defaults to "csv".
-
-        Raises:
-            ValueError: If format is not "csv" or "json".
         """
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM api_well_data")

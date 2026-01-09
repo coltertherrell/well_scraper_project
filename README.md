@@ -31,7 +31,10 @@ well_scraper_project/
 │   ├── constants.py
 │   ├── well_scraper.py
 │   ├── database.py
-│   └── app.py
+│   ├── app.py
+│   └── models/
+│       ├── __init__.py
+│       └── well_record.py
 ├── data/
 │   ├── apis_pythondev_test.csv         # Input CSV of API numbers
 │   ├── sqlite.db                       # SQLite database

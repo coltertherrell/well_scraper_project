@@ -8,6 +8,7 @@ import threading
 import time
 from .well_scraper import WellScraper
 from .database import WellDatabase
+from .models import WellRecord
 
 
 class ScraperApp:
@@ -47,12 +48,23 @@ class ScraperApp:
                 self.logger.warning(f"No data scraped for {api}")
                 return
 
-            self.db.insert(data)
+            # Convert scraped dict -> WellRecord dataclass
+            record = WellRecord(**data)
+
+            self.db.insert(record)
 
             with self.lock:
                 self.inserted += 1
 
             self.logger.info(f"Inserted {api}")
+
+        except TypeError as e:
+            # Usually indicates mismatch between scraped keys and WellRecord fields
+            with self.lock:
+                self.errors += 1
+            self.logger.exception(
+                f"Data schema error for API {api} (likely mismatched fields): {e}"
+            )
 
         except Exception as e:
             with self.lock:
@@ -79,7 +91,9 @@ class ScraperApp:
         total_apis = len(apis) + self.skipped
 
         if self.multithread:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.threads) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=self.threads
+            ) as executor:
                 for api in apis:
                     executor.submit(self._process_api, api)
         else:
