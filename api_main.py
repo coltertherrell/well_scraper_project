@@ -39,6 +39,7 @@ def get_well(api_number: str, db: WellDatabase = Depends(get_db)):
     Returns:
         WellRecord: The well data
     """
+    logger.info(f"Fetching well data for API: {api_number}")
     cursor = db.conn.cursor()
     cursor.execute("SELECT * FROM api_well_data WHERE API = ?", (api_number,))
     row = cursor.fetchone()
@@ -50,4 +51,5 @@ def get_well(api_number: str, db: WellDatabase = Depends(get_db)):
     # Map the row to WellRecord
     columns = [description[0] for description in cursor.description]
     record_dict = dict(zip(columns, row))
+    logger.info(f"Well data retrieved for API: {api_number}\n Well data: {record_dict}\n")
     return WellRecord(**record_dict)
