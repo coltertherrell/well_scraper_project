@@ -2,7 +2,7 @@
 
 A Python scraper for New Mexico Oil & Gas well data from the [N.M. Energy, Minerals and Natural Resources Department (EMNRD) Well Details](https://wwwapps.emnrd.nm.gov/OCD/OCDPermitting/Data/WellDetails.aspx) website.  
 
-This project reads a CSV of API numbers, scrapes well information for each, stores it in a SQLite database, and optionally exports the data to CSV or JSON. It supports multithreading, logging, and automatic retries when being rate limited.
+This project reads a CSV of API numbers, scrapes well information for each, stores it in a SQLite database, and optionally exports it to CSV or JSON. It supports multithreading, logging, and automatic retries when being rate limited.
 
 ---
 
@@ -19,6 +19,7 @@ This project reads a CSV of API numbers, scrapes well information for each, stor
 - Multithreaded scraping for faster processing
 - Handles HTTP errors and retries with exponential backoff
 - Logging to console with timestamps and log levels
+- **API endpoint** for querying wells by API number (via FastAPI)
 
 ---
 
@@ -38,8 +39,9 @@ well_scraper_project/
 ├── data/
 │   ├── apis_pythondev_test.csv         # Input CSV of API numbers
 │   ├── sqlite.db                       # SQLite database
-|   └── wells_export.csv                # Optional csv export of sqlite.db to easily view data    
-├── main.py
+│   └── wells_export.csv                # Optional csv export of sqlite.db to easily view data    
+├── main.py                             # CLI scraping entrypoint
+├── api_main.py                         # FastAPI entrypoint
 ├── requirements.txt
 ├── README.md
 └── tests/
@@ -112,8 +114,6 @@ python main.py --csv data/apis_pythondev_test.csv --export_path data/wells_expor
 - `--export_path`: File path to save exported data
 - `--export_format`: Either `csv` or `json`
 
-If no export options are provided, the scraper only writes to the database.
-
 ---
 
 ## Logging
@@ -142,24 +142,60 @@ Empty or missing API rows are skipped with a warning.
 
 ---
 
-## Requirements
+## API Endpoints
 
-- Python 3.8+
-- `requests`
-- `beautifulsoup4`
-- `pytest` (for testing)
+The project provides a **FastAPI endpoint** to query well data by API number.
 
-Install via:
+### Start the API server
 
 ```bash
-pip install -r requirements.txt
+uvicorn api_main:app --reload
 ```
 
-Or manually:
+- `--reload` automatically reloads when code changes
+- Default URL: `http://127.0.0.1:8000`
+- Docs URL: `http://127.0.0.1:8000/docs`
 
-```bash
-pip install requests beautifulsoup4 pytest
+### GET /well/{api_number}
+
+Retrieve all data for a well by its API number.
+
+**Request:**
+
+```http
+GET /well/30-015-25325
 ```
+
+**Response:**
+
+```json
+{
+  "API": "30-015-25325",
+  "Operator": "Some Operator",
+  "Status": "Active",
+  "Well_Type": "Oil",
+  "Work_Type": "Exploratory",
+  "Directional_Status": null,
+  "Multi_Lateral": null,
+  "Mineral_Owner": null,
+  "Surface_Owner": null,
+  "Surface_Location": null,
+  "GL_Elevation": 5000.0,
+  "KB_Elevation": 5020.0,
+  "DF_Elevation": 4980.0,
+  "Single_Multiple_Completion": null,
+  "Potash_Waiver": null,
+  "Spud_Date": "2025-05-01",
+  "Last_Inspection": "2025-12-01",
+  "TVD": 10000.0,
+  "Latitude": 35.123,
+  "Longitude": -106.456,
+  "CRS": "NAD83"
+}
+```
+
+- Returns `404` if the well is not found
+- Uses **dependency-injected database** for safe and testable queries
 
 ---
 
@@ -171,13 +207,14 @@ Run unit tests with pytest:
 pytest tests/
 ```
 
-Tests cover database operations, web scraping logic, and app functionality with mocked dependencies.
+Tests cover database operations, web scraping logic, app functionality, and API endpoints (mocked).
 
 ---
 
 ## Notes
 
-- Handles content based (as opposed to HTTP 429 respone codes) rate limiting with exponential backoff
+- Handles content-based (as opposed to HTTP status code based) rate limiting with exponential backoff
 - Multithreading improves speed for large CSVs
 - Latitude, Longitude, CRS are parsed from the same field
 - SQLite DB can be exported anytime using `export_data()` method in `database.py`
+- API endpoint allows programmatic access to well data without rerunning the scraper

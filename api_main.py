@@ -1,0 +1,53 @@
+# =========================
+# well_scraper/api_main.py
+# =========================
+from fastapi import FastAPI, Depends, HTTPException
+from typing import Optional
+import logging
+from well_scraper.database import WellDatabase
+from well_scraper.models import WellRecord
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("API")
+
+# FastAPI app
+app = FastAPI(
+    title="NM Oil & Gas Well API",
+    description="Retrieve New Mexico well data by API number",
+    version="1.0.0",
+)
+
+# Dependency: get a database instance
+def get_db() -> WellDatabase:
+    db_path = "data/sqlite.db"
+    db = WellDatabase(db_path)
+    return db
+
+@app.get("/well/{api_number}", response_model=WellRecord)
+def get_well(api_number: str, db: WellDatabase = Depends(get_db)):
+    """
+    Retrieve well data by API number.
+
+    Args:
+        api_number (str): The API number of the well
+        db (WellDatabase): Injected database instance
+
+    Returns:
+        WellRecord: The well data
+    """
+    cursor = db.conn.cursor()
+    cursor.execute("SELECT * FROM api_well_data WHERE API = ?", (api_number,))
+    row = cursor.fetchone()
+
+    if not row:
+        logger.warning(f"Well not found: {api_number}")
+        raise HTTPException(status_code=404, detail=f"Well {api_number} not found")
+
+    # Map the row to WellRecord
+    columns = [description[0] for description in cursor.description]
+    record_dict = dict(zip(columns, row))
+    return WellRecord(**record_dict)
