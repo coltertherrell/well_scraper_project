@@ -4,6 +4,10 @@ A Python scraper for New Mexico Oil & Gas well data from the [N.M. Energy, Miner
 
 This project reads a CSV of API numbers, scrapes well information for each, stores it in a SQLite database, and optionally exports it to CSV or JSON. It supports multithreading, logging, and automatic retries when being rate limited.
 
+In addition, a FastAPI-based HTTP API provides programmatic access to the well data:
+
+- GET /well/{api_number} – Retrieve all available information for a specific well by API number.
+- GET /polygon?coords=lat1,lon1,lat2,lon2,... – Retrieve all API numbers for wells located within a user-defined polygon.
 ---
 
 ## Features
