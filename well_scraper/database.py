@@ -132,3 +132,21 @@ class WellDatabase:
 
         else:
             raise ValueError("format must be 'csv' or 'json'")
+
+    def get_by_api(self, api: str) -> WellRecord | None:
+        """
+        Retrieve a single well record by API number.
+        """
+        self.conn.row_factory = sqlite3.Row
+        cursor = self.conn.cursor()
+
+        cursor.execute(
+            "SELECT * FROM api_well_data WHERE API = ?",
+            (api,)
+        )
+
+        row = cursor.fetchone()
+        if not row:
+            return None
+
+        return WellRecord(**dict(row))
